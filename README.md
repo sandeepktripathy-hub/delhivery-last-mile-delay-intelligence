@@ -157,7 +157,7 @@ The five noise-column Random Forest importances were:
 - `sticker_serial_mod`: **0.0499**
 - `shelf_slot_no`: **0.0436**
 
-Although these bookkeeping fields receive some tree-based importance collectively, their weak F-scores support excluding them from the final seven-feature classifier.
+Together, the five bookkeeping/noise columns account for approximately **0.2245 (22.45%)** of the Random Forest feature importance. However, all five rank outside the top seven by F-score, supporting their exclusion from the final seven-feature classifier.
 
 ### Select-K experiment
 
@@ -233,7 +233,7 @@ The tier label should therefore be treated as a structural classification rather
 
 The operational alert threshold is **0.5000**.
 
-On the final test set, precision is **0.6889**, meaning most flagged shipments are genuinely delayed, while recall is **0.7561**, meaning the model catches a substantial majority of delayed parcels.
+On the final test set, precision is **0.6889**, meaning approximately **6.9 out of every 10 flagged parcels are actually delayed**. Recall is **0.7561**, meaning approximately **7.6 out of every 10 genuinely delayed parcels are caught by the alert system**.
 
 Among the 48 new shipments:
 
