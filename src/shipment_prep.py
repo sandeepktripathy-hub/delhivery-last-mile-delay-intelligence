@@ -5,7 +5,7 @@ import pandas as pd
 PROMISED_HOURS = {
     "Express": 36,
     "Standard": 60,
-    "Economy": 96
+    "Economy": 96,
 }
 
 
@@ -52,7 +52,7 @@ def clean_shipments(raw, medians=None):
         .str.title()
     )
 
-    # 3. Fill missing payment mode
+    # 3. Fill missing payment mode with placeholder
     clean["payment_mode"] = clean["payment_mode"].fillna("Unknown")
 
     # 4. Convert declared value text to numeric INR
@@ -65,32 +65,43 @@ def clean_shipments(raw, medians=None):
 
     clean["declared_value_inr"] = pd.to_numeric(
         clean["declared_value_inr"],
-        errors="coerce"
-    )
+        errors="coerce",
+    ).astype(float)
 
     clean = clean.drop(columns=["declared_value"])
 
     # 5. Convert dispatch time to datetime
-    clean["dispatch_time"] = pd.to_datetime(clean["dispatch_time"])
+    clean["dispatch_time"] = pd.to_datetime(
+        clean["dispatch_time"]
+    )
 
     # 6. Treat parcel weights above 100 kg as scanner-fault sentinels
     clean.loc[
         clean["parcel_weight_kg"] > 100,
-        "parcel_weight_kg"
+        "parcel_weight_kg",
     ] = np.nan
+
+    # Ensure numeric columns can accept decimal median values
+    clean["distance_km"] = clean["distance_km"].astype(float)
+    clean["parcel_weight_kg"] = clean["parcel_weight_kg"].astype(float)
+    clean["declared_value_inr"] = clean["declared_value_inr"].astype(float)
 
     # 7. Compute or reuse medians
     if medians is None:
         medians = {
             "distance_km": float(clean["distance_km"].median()),
             "parcel_weight_kg": float(clean["parcel_weight_kg"].median()),
-            "declared_value_inr": float(clean["declared_value_inr"].median()),
+            "declared_value_inr": float(
+                clean["declared_value_inr"].median()
+            ),
         }
     else:
         medians = {
             "distance_km": float(medians["distance_km"]),
             "parcel_weight_kg": float(medians["parcel_weight_kg"]),
-            "declared_value_inr": float(medians["declared_value_inr"]),
+            "declared_value_inr": float(
+                medians["declared_value_inr"]
+            ),
         }
 
     # 8. Fill missing numeric values
@@ -99,7 +110,9 @@ def clean_shipments(raw, medians=None):
         "parcel_weight_kg",
         "declared_value_inr",
     ]:
-        clean[column] = clean[column].fillna(medians[column])
+        clean[column] = clean[column].fillna(
+            medians[column]
+        )
 
     return clean, medians
 
@@ -116,7 +129,7 @@ def build_features(clean, hubs):
     features = clean.merge(
         hubs[hub_columns],
         on="hub_id",
-        how="left"
+        how="left",
     )
 
     features["promised_hours"] = (
@@ -134,7 +147,9 @@ def build_features(clean, hubs):
     ).astype(int)
 
     features["dispatch_hour"] = (
-        features["dispatch_time"].dt.hour.astype(int)
+        features["dispatch_time"]
+        .dt.hour
+        .astype(int)
     )
 
     features["log_declared_value"] = np.log(
